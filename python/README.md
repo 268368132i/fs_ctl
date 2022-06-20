@@ -8,7 +8,7 @@ This portion of the project is responsible for getting data into and out of Free
 <action application="set" data="data=${python(check)}" inline="true"/>
 ```
 
-You can use client's variables for authentication:
+Then client's variables can be used for authentication:
 ```
 <condition field="${ext_authenticated}" expression="^true|false$">
 	  <action application="answer"/>
@@ -17,11 +17,14 @@ You can use client's variables for authentication:
 </condition>
 ```
 
-Here you can see that `ext_authenticated` reflects whether the user has access and `conf_flags` provide conference settings according user's permissions.
+Here you can see that `ext_authenticated` reflects whether the user has access and `conf_flags` provides conference settings according to user's permissions.
+
 **Check database access settings** at the beginning of the script.
+
 You might need to check FreeSwitch's documentation for executing python scripts.
 
 ---
 
 **`comm_socket.py`** is a simple wrapper for FreeSwitch's ESL to text based Unix socket. You might want to change ip and credenticals in this file. You'll need to run this script manually.
+
 **This script requires `ESL.so` and `ESL.py` libraries from FreeSwitch!**
