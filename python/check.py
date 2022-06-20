@@ -47,7 +47,7 @@ def fsapi(session, stream, env, args):
       consoleLog( "info", "SQL: %s " % sql)
       n=cursor.execute(sql)
       session.execute("set","got_results=" + str(n))
-#If we got at least one match then we set the user as authenticated
+#If we got at least one match then we set a user as authenticated
       if n>0:
         res=cursor.fetchone()
         session.execute("set","conf_flags=" + str(res["flags"]))
