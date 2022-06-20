@@ -5,6 +5,7 @@ The idea is to use FreeSwitch MCU for video conferences. Many organizations have
 There are two parts:
 - **python**: communicates with FreeSwitch
 - **web**: web interface.
+
 A database server is used to link these two parts.
 
 Please, see READMEs in subdirectories for details.
