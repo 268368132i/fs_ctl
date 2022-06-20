@@ -1,6 +1,8 @@
 ## Scripts that communicate with FreeSwitch
 This portion of the project is responsible for getting data into and out of FreeSwitch.
 
+All code is Python **2.7**.
+
 ---
 
 **`check.py`** accesses a database and is called from FreeSwitch's Dialplan like this:
