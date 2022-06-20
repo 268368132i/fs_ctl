@@ -1,0 +1,32 @@
+{% extends "page.html" %}
+{% load static %}
+{% block sidebar_content %}
+<div class="header">
+  <h2 class="brand-title">
+    {{ assignment.conference.name }}
+  </h2>
+  <h3 class="brand-tagline">
+    Публикация записи
+  </h3>
+  <ul class="nav-list">
+    <li class="nav-item">
+      <a class="pure-button" href="{% url 'exchange:confs' %}">Мои конференции</a>
+    </li>
+    <li class="nav-item">
+      <a class="pure-button" href="{% url 'accounts:user_logout' %}">Выйти</a>
+    </li>
+    </ul>        
+</div>
+{% endblock %}
+{% block content %}
+<form class="pure-form" method="POST" enctype="multipart/form-data">
+{% csrf_token %}
+<fieldset>
+
+{{ form.as_p }}
+
+<input type='submit' value='Upload'>
+
+</fieldset>
+</form>
+{% endblock %}

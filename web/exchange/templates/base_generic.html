@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% load static %} 
+  <link href="{% static 'basic.css' %}" rel="stylesheet">
+  <link href="{% static 'pure.css' %}" rel="stylesheet">
+  <link href="{% static 'grids-responsive.css' %}" rel="stylesheet">
+  <link href="{% static 'blog-styles.css' %}" rel="stylesheet">
+</head>
+<body>
+  {% block content %}<!-- default content text (typically empty) -->{% endblock %}
+</body>
+</html>

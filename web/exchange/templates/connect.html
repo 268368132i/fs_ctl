@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title> {{ confName }}</title>
+    <!-- Verto dependencies -->
+    <script src="/static/node_modules/jquery/dist/jquery.min.js"></script>
+    <script src="/static/node_modules/jquery-json/dist/jquery.json.min.js"></script>
+        <script>
+      confExt='{{ confExt }}';
+      userName='{{ username }}';
+      socketUrl='{{ FSSocket }}';
+      FSLogin='{{ FSLogin }}';
+      FSPasswd='{{ FSPasswd }}';
+      sourceUrl='{% url 'exchange:confs' %}?key={{ key }}';
+      participants=new Array();
+      screenSharings=new Array();
+      uuid='{{ uuid }}';
+      mainCall=null;
+      mainVertoHandle=null;
+      vertoInitParams = {
+          skipPermCheck: {{ skip_check }},
+          skipDeviceCheck: {{ skip_check }},
+          };
+      devParms = {
+          useMic: '{{ dev }}',
+          useSpeak: {% if screenshare_only %} 'none' {% else %} 'any' {% endif %},
+          useCamera: '{{ dev }}',
+        };
+    </script>
+    <script src="/static/lib/verto/jquery.verto.js"></script>
+    <script src="/static/lib/verto/jquery.FSRTC.js"></script>
+    <script src="/static/lib/verto/jquery.jsonrpcclient.js"></script>
+    <script src="/static/classes.js"></script>
+    <script src="/static/myutil.js"></script>
+    <script src={% if screenshare_only %} "/static/screenshare.js" {% else %} "/static/main.js" {% endif %}></script>
+    <script src="/static/control.js"></script>
+
+    <!-- Our project's files -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %} 
+    <link href="{% static 'basic.css' %}" rel="stylesheet">
+    <link href="{% static 'layout.css' %}" rel="stylesheet">
+    <link href="{% static 'pure.css' %}" rel="stylesheet">
+    <link href="{% static 'grids-responsive.css' %}" rel="stylesheet">
+  </head>
+
+  <body>
+    <div class="pure-g" id="main-area">
+      <div class="panel pure-u-1" id="main-panel">
+        <text id="conf-name"> {{ confName }}</text>
+      	<button class="pure-button" id="make-call" disabled=true style="#display: none">Подключиться</button>
+      	<button class="pure-button" id="end-call" disabled=true style="#display: none">Отключиться</button>
+      	<label for="vidSources">Video</label>
+      	<select name="vidSources" id="vidSources"></select>
+      	<label for='useICE'>Use ICE</label>
+      	<input type='checkbox' name='useICE' id='use-ice-checkbox' indeterminate>
+      	
+      </div>
+
+{% if not screenshare_only %}
+      <div class="content pure-u-1 pure-u-md-4-5" id="contentContainer" style="max-height:98vh">
+	      <div class="video-controls-top hide">
+				<button class="pure-button" style="display:none;" id="start-screenshare">Start Screenshare</button>
+				<button class="pure-button" style="display:none;" id="stop-screenshare">Stop Screenshare</button>
+				<button class="pure-button" style="" id="hang-up-call">Отключиться</button>
+	      </div>
+			<div class="video-controls-bottom hide">
+				<button class="pure-button" style="" id="amute">AMute</button>
+				<button class="pure-button" style="" id="vmute">VMute</button>
+				<button class="pure-button" style="" id="fullscreen" onclick="toggleFullscreen(document.getElementById('contentContainer'))">FullScr</button>
+	      </div>
+	      <video id="video-container" autoplay="autoplay" style="height:100%;width:100%"></video>
+      </div>
+{% endif %}
+
+		<div id="side-panel" class="side-panel pure-u-1 pure-u-md-1-5">
+			<div id="users-block" class="users">
+			</div>
+
+			<div class="chat">
+			</div>
+		</div>
+		{% if flagsName == "admin" %}
+      <div class="control pure-u-1 pure-u-md-4-5" style="height: 300px; background: orange;border-style: double">
+			<text>Conference layout:</text>
+			<span id="changeLayout">
+				<select id="layouts" onchange="setLayout(this)">
+					<option value="str-hd">str-hd</option>
+					<option value="2x1">2x1</option>
+					<option value="2x1-zoom">2x1-zoom</option>
+					<option value="5-grid-zoom">5-grid-zoom</option>
+					<option value="3x2-zoom">3x2-zoom</option>
+					<option value="7-grid-zoom">7-grid-zoom</option>
+					<option value="4x2-zoom">4x2-zoom</option>
+					<option value="1x1+2x1">1x1+2x1</option>
+					<option value="2x2">2x2</option>
+				</select>
+			</span>
+      </div>
+		{% endif %}
+
+    </div> <!-- /container -->
+    <div class="oldchat" hidden>
+      <nav id="msgnav">
+        <div id="messages">
+        </div>
+      </nav>
+      <div>
+        <input type="text" id="myMessage" class="textField" style="display: inline-block; width: calc(100% - 40px); vertical-align: middle;margin-top: 1px;"></input>
+        <div id="sendMyMessage" style=" background: white; display: inline-block"><text>></text></div>
+      </div>
+    </div>
+    <script>
+    </script>
+  </body>
+</html>

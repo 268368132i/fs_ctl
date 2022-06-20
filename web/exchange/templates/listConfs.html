@@ -1,0 +1,70 @@
+{% extends "page.html" %}
+{% block sidebar_content %}
+<div class="header">
+    <h2 class="brand-title">Здравствуйте, {{ user.name }}!</h2>    
+    <ul class="nav-list">
+    {% if authenticated %}
+        <li class="nav-item">
+            <a class="pure-button" href="{% url 'accounts:user_logout' %}">Выйти</a>
+        </li>
+    {% endif %}
+    </ul>            
+</div>
+{% endblock %}
+{% block content %}  
+          <div class="content-subhead">
+            <section class="post">
+              <header class="post-header">
+                <h2 class="post-title">
+                  {{ title }}
+                </h2>
+                <p class="post-meta">
+                  Нажмите "Connect" для участия в конференции.
+                </p>
+              </header>
+            </section>
+          </div>
+          {% for assignment in assignments %}
+            <section class="post">
+              <header class="post-header">
+                <h2 class="post-title">{{ assignment.conference.name }}</h2>
+                <p class="post-meta">
+                    {% if assignment.num_connected > 0 %}                  
+                    <div class="post-category post-category-design fitContent">
+                        <text>{{ assignment.num_connected }} в конференции</text>
+                    </div>
+                    {% endif %}
+                </p>
+                <div class="post-description">
+                  <p>
+                    {{ assignment.conference.description }}
+                  </p>
+                </div>
+              </header>
+              <div class="post-description">
+                <p class="post-meta">
+                  <a href="{% url 'exchange:conf_connect' %}?uuid={{assignment.id}}&csum={{assignment.hash}}" class="pure-button">
+                    Connect
+                  </a>
+                  <a href="{% url 'exchange:recordings' conf=assignment.conference.id %}">
+                    Recordings
+                  </a>
+                  <a href="{% url 'exchange:list_assets' conf=assignment.conference.id %}">
+                    Assets
+                  </a>
+                  {% if assignment.flags.name == 'admin' and authenticated %}
+                  <a href={% url 'exchange:ctl' uuid=assignment.id %}>
+                    End
+                  </a>
+                  <a href="{% url 'exchange:conf_ctl_page' assignment_id=assignment.id %}">
+                    Control
+                  </a>
+                  {% endif %}
+                  {% if assignment.flags.name == 'admin' or assignment.flags.name == 'screenshare' %}
+                  	 ({{assignment.flags.name }})
+                  {% endif %}
+                </p>
+              </div>
+            </section>
+          {% endfor %}
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base_generic.html" %}
+{% block base %}
+<div class="sidebar pure-u-1 pure-u-md-1-4">
+  {% block sidebar_content %}
+
+  {% endblock %}
+</div>
+    <div class="content pure-u-1 pure-u-md-3-4">
+      <div>
+        <div class="posts">
+        {% block content %}
+        {% endblock %}
+        </div>
+      </div>
+    </div>
+{% endblock %}

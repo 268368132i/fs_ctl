@@ -1,0 +1,32 @@
+{% extends "page.html" %}
+
+{% block content %}
+
+{% if form.errors %}
+<p>Your username and password didn't match. Please try again.</p>
+{% endif %}
+
+{% if next %}
+    {% if user.is_authenticated %}
+    <p>Your account doesn't have access to this page. To proceed,
+    please login with an account that has access.</p>
+    {% else %}
+    <p>Please login to see this page.</p>
+    {% endif %}
+{% endif %}
+
+<form class="pure-form pure-form-aligned" method="post" action="{% url 'accounts:user_login' %}">
+{% csrf_token %}
+<fieldset>
+	<div class="pure-control-group">
+	{{ form.as_p }}
+	</div>
+</fieldset>
+<div class="pure-controls">
+	<input class="pure-button pure-button-primary" type="submit" value="login">
+</div>
+<input type="hidden" name="next" value="{% url 'exchange:confs' %}">
+</form>
+
+
+{% endblock %}

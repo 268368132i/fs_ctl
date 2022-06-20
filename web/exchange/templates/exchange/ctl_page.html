@@ -1,0 +1,421 @@
+{% extends "page.html" %}
+{% load static %}
+{% block sidebar_content %}
+<div class="header">
+  <h2 class="brand-title">
+    {{ assignment.conference.name }}
+  </h2>
+  <h3 class="brand-tagline">
+    Управление конференцией
+  </h3>
+  <ul class="nav-list">
+    <li class="nav-item">
+      <a class="pure-button" href="{% url 'exchange:confs' %}">Мои конференции</a>
+    </li>
+    <li class="nav-item">
+      <a class="pure-button" href="{% url 'accounts:user_logout' %}">Выйти</a>
+    </li>
+    </ul>        
+</div>
+{% endblock %}
+{% block content %}
+<div id="busy-indicator" style='width: 1.5em; height: 1.5em'>
+
+</div>
+<form id="general_form" method="POST">
+  {% csrf_token %}
+  <label for="action">Action: </label>
+  <input type="text" name="action" value="conf-info">
+  <input type="submit" value="submit">
+</form>
+<form id="hidden_form" method="POST">
+  {% csrf_token %}
+  <input type="hidden" id='hidden-action' name="action" value="conf-info">
+  <input type='hidden' id='hidden-args' name='args'>
+  <input type="submit" value="submit">
+</form>
+<section class="post">
+    <div class="post-header">
+        <p class="post-title">
+        Conference
+        </p>
+    </div>
+    
+    
+<div id="conf-info" style="border: solid;">
+  <div id="conf-info-general">
+  </div>
+  <div id="conf-rec-ctl" style="margin:1em;">
+    <div>
+        <select id='rec-target'>
+            <option value="record">Record to file</option>
+            <option value="stream">Stream</option>
+        </select>
+    </div>
+    <span id='stream-properties'>
+        <label for="streampath">Stream URL:</label>
+        <input type="text" name="recordpath" id="streampath">
+    </span>
+    <span id="conf-record-ctl-btn">
+        <input type="button" id="record-btn" class='pure-button' value='REC'>
+    </span>
+  </div>
+  <div id="conf-layout">
+    <form id="layout-selector-form" method="POST">
+        {% csrf_token %}
+        <label for="layout-selector">Layout:</label>
+        <select id="layout-selector" name="layout-selector">        
+        {% for layout in layouts %}
+            <option value="{{ layout }}">{{ layout }}</option>
+        {% endfor %}
+        </select>
+    </form>
+  </div>
+</div>
+
+
+</section>
+<section class="post">
+    <div class="post-header">
+        <p class="post-title">
+            Participants
+        </p>
+        <input type='button' id='refresh-participants' value='Refresh participants'>
+
+    </div>
+    <div id='participants'>
+    </div>
+</section>
+ 
+<script src="{% static 'lib/jquery-3.6.0.min.js' %}"></script>
+<script src="{% static 'lib/jquery-ui.min.js' %}"></script>
+<script>
+function runAction(data){
+    var fData = new FormData();
+    Object.keys(data).forEach(function(key, index){
+        if (typeof this[key] === "object" && this[key].nodeName === "INPUT"){
+          fData.append(key, this[key].value);
+        } else {
+          fData.append(key, this[key]);
+        }
+    },data);
+    fData.append('csrfmiddlewaretoken', '{{ csrf_token }}');    
+    $('<form></form>').appendTo('body').submit(function(e){        
+        $.ajax({
+        beforeSend : function(){
+            $('#busy-indicator').css('background-color','red');
+        },
+        complete: function(){
+        },
+        type: 'POST',
+        url: "{% url 'exchange:new_ctl' uuid=assignment.id %}",
+        success: function(ret_data){
+            if (ret_data.members){
+              buildParticipants(ret_data);
+              setConfInfo(ret_data);
+            } else {
+              if (ret_data.success){
+
+              } else {
+                  alert(ret_data.comment);
+              }
+            }
+            $('#busy-indicator').css('background-color','green');
+
+        },
+        data: fData,
+        contentType: false,
+        cache: false,
+        processData: false,
+        error: function(){
+            alert(response.responseJSON.error);
+            console.log(response.responseJSON.error);
+        },
+        });
+        e.preventDefault();
+    }).submit().remove();    
+}
+
+function createParticipantAction(action,participant_id,text,arg,highlight){
+  var act = document.createElement("BUTTON")
+  var attributes;
+  if (highlight===1) {attributes = "pure-button pure-button-active";}
+  else {attributes = "pure-button"}
+  if (typeof arg !== undefined){
+    arg = " " + arg + " ";
+  } else {
+    arg="";
+  }
+  act.setAttribute('class',attributes);
+  $(act).append($("<span></span>").text(text));
+  $(act).click(function(){
+    console.log(action + " for member id " + participant_id + " with arg " + arg);
+    $('#hidden-action').val(action + ' ' + participant_id + arg);
+    $('#hidden_form').submit();
+  });
+  return act;
+}
+
+function createParticipantActionNew(data,text,highlight){
+  var act = document.createElement("BUTTON")
+  var attributes;
+  if (highlight===1) {attributes = "pure-button pure-button-active";}
+  else {attributes = "pure-button"}
+  act.setAttribute('class',attributes);
+  $(act).append($("<span></span>").text(text));
+  $(act).click(function(){
+    runAction(data);
+  });
+  return act;
+}
+
+function createConfAction(action,text,highlight, argsSource){
+  var act = document.createElement("BUTTON")
+  var attributes;
+  if (highlight===1) {attributes = "pure-button pure-button-active";}
+  else {attributes = "pure-button"}
+
+  act.setAttribute('class',attributes);
+  $(act).append($("<span></span>").text(text));
+  $(act).click(function(){
+    console.log("argsSource=" + argsSource);
+    if (argsSource!=undefined) action += " " + argsSource.value
+    console.log(action + " for conference");
+    $('#hidden-action').val(action);
+    $('#hidden_form').submit();
+  });
+  return act;
+}
+
+function createActionsGroupElement(list, groupName=''){
+  var gr = document.createElement("span");
+  gr.setAttribute('class','actionGroup');
+  var name;
+  if (groupName != '') {
+    name = document.createElement("text");
+    name.textContent = groupName;
+    gr.appendChild(name);
+  }
+  list.forEach(e => {
+    gr.appendChild(e);
+  });
+  return gr;
+}
+
+function buildParticipants(data){
+//$('#participants').empty();
+console.log("building participans' list");
+var pcount = document.getElementById('pcount');
+if (pcount == null){
+  $('#participants').append($("<p id='pcount'></p>"));
+  pcount = document.getElementById('pcount');
+}
+pcount.textContent="Total participants: " + data['member_count'];
+
+var table = document.getElementById('participants-list');
+if (table == null){
+  $('#participants').append($("<table id='participants-list' class='pure-table pure-table-striped pure-table-horizontal' style='width: 100%;'></table>"));
+  table = document.getElementById('participants-list');
+} 
+data.members.forEach(member=>{  
+  if (table.querySelector('[puuid="' + member.id + '"]') != null) {
+    console.log('member.id=' + member.id + ' exists already');
+    return;  
+  }
+  var memli = document.createElement("tr");
+  memli.setAttribute('puuid',member.id);
+  if (member.type==="recording_node"){
+    $(memli).append($("<td colspan=2></td>").text("Recording to " + member.record_path));
+  } else {
+    $(memli).append($("<td></td>").text(member.caller_id_name));
+    
+    var actions = document.createElement("td");
+    
+    var mid = member.id;
+    
+    var mainActions = document.createElement("span");
+    mainActions.setAttribute('class','actionGroup');
+    var kick = createParticipantAction("kick",mid,"X");
+    mainActions.appendChild(kick);
+    actions.appendChild(mainActions);
+    
+    if (member.flags.can_speak){
+        var amute = createParticipantAction("mute", mid, "AM");
+    } else {
+        var amute = createParticipantAction("unmute", mid, "AM",undefined,1);
+    }
+    $(actions).append(createActionsGroupElement([amute]));
+    
+    if (member.flags.has_video){
+        $(actions).append(createActionsGroupElement([
+          createParticipantAction("vmute", mid, "VM"),
+          createParticipantAction("unvmute", mid, "UNVM"),
+          ]));
+        layout_flags = [
+          createParticipantAction("vid-res-id", mid, "ScrSh", "screenshare"),
+          createParticipantAction("vid-res-id", mid, "Pre", "presenter"),
+          ];        
+        if (member.flags.has_floor){
+            layout_flags.push(createParticipantAction("vid-floor", mid, "Floor", "force",1));
+        } else {
+            layout_flags.push(createParticipantAction("vid-floor", mid, "Floor", "force"));
+        }
+        actions.appendChild(createActionsGroupElement(layout_flags));
+        $(actions).append('<br>');
+        var logo_input = document.createElement('input');
+        logo_input.setAttribute('type','text');
+        logo_input.value = member.caller_id_name;
+        
+        var logo_alt_input = document.createElement('input');
+        logo_alt_input.setAttribute('type','text');
+        
+        $(actions).append(createActionsGroupElement([
+          createParticipantAction("vid-logo-img", mid, "OFF", "clear"),
+          createParticipantActionNew({
+            'action': 'logo_on',
+            'participant_num': mid,
+            'text': logo_input,
+            'alt_text':logo_alt_input,
+          },
+          'ON'),
+          logo_input,
+          logo_alt_input,
+          ],'Logo'));
+        var banner_input = document.createElement('input');
+        banner_input.setAttribute('type','text');
+        banner_input.value = member.caller_id_name;
+        $(actions).append('<br>');
+        $(actions).append(createActionsGroupElement([
+          createParticipantActionNew({
+            'action': 'banner_off',
+            'participant_num': mid,
+          },
+          'OFF'),
+          createParticipantActionNew({
+            'action': 'banner_on',
+            'participant_num': mid,
+            'text': banner_input,
+          },
+          'ON'),
+          banner_input,
+        ],'Banner'));
+    }    
+    $(memli).append($(actions));
+  }
+  $('#participants-list').append(memli);
+  
+  });
+}
+
+function setConfInfo(data){
+  var cinf = document.getElementById("conf-info");
+  var gen = document.getElementById('conf-info-general');
+  $(gen).empty();
+  $(gen).append($("<span></span>").text("Name: " + data.conference_name));
+  $(gen).append($("<span></span>").text("Duration: " + data.run_time));
+  //Recording
+  var recpath = document.getElementById("recpath");
+  if (data.recording) {    
+    $('#record-btn')
+      .unbind()
+      .addClass('pure-button-active')
+      .click(function(){        
+        console.log("Stopping recording");
+        $('#hidden-action').val("recording stop");
+        $('#hidden_form').submit();
+    });
+  } else {
+    $('#record-btn')
+      .unbind()
+      .removeClass('pure-button-active')
+      .click(function(){
+        var rec_action='';
+        if ($('#rec-target').val()==='stream'){
+          rec_action = "record " + $('#streampath').val();
+        }
+        else if ($('#rec-target').val()==='record'){
+          rec_action = "record";
+      }
+          console.log(rec_action + " for conference");
+      $('#hidden-action').val(rec_action);
+      $('#hidden_form').submit();
+    });
+  }
+}
+
+$(document).ready(function (){
+  $('#general_form').submit(function(){
+    $.ajax({
+      data: $(this).serialize(),
+      type: $(this).attr('method'),
+      url: "{% url 'exchange:ctl' uuid=assignment.id %}",
+      success: function(){
+        console.log("Command sent");
+      },
+      error: function(){
+        alert(response.responseJSON.error);
+        console.log(response.responseJSON.error);
+      }
+    });
+    return false;
+  });
+    $('#hidden_form').submit(function(){
+    $.ajax({
+      beforeSend : function(){
+        $('#busy-indicator').css('background-color','red');
+      },
+      complete: function(){
+      },
+      type: $(this).attr('method'),
+      url: "{% url 'exchange:ctl' uuid=assignment.id %}",
+      success: function(data){
+        if (data.members){
+          buildParticipants(data);
+          setConfInfo(data);
+        } else {
+          if (data.success){
+           /* $('#hidden-action').val('conf-info');
+            $(this).submit();*/
+          } else {
+            alert(data.comment);
+          }
+        }
+        $('#busy-indicator').css('background-color','green');
+
+      },
+      data: $(this).serialize(),
+      error: function(){
+        alert(response.responseJSON.error);
+        console.log(response.responseJSON.error);
+      },
+    });
+    return false;
+  });
+  
+  $('#layout-selector').change(function(){
+    $('#hidden-action').val("vid-layout " + this.value);
+    $('#hidden_form').submit();
+  });
+  
+  
+  $('#refresh-participants').click(function(){
+    $('#hidden-action').val('conf-info');
+    $('#hidden_form').submit();
+  });
+  $('#rec-target').change(function(){
+    var selected = $('#rec-target').val()
+    console.log('changed to ' + selected);
+    if (selected==='record'){
+      console.log('Hiding streampath');
+      $('#stream-properties').hide();
+    } else if (selected === 'stream'){
+      console.log("Showing streampath");
+      $('#stream-properties').show();
+    }
+  });
+  $('#rec-target').trigger('change');
+});
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,130 @@
+{% extends "page.html" %}
+{% load static %}
+{% block sidebar_content %}
+<div class="header">
+  <h2 class="brand-title">
+    {{ conference.name }}
+  </h2>
+  <h3 class="brand-tagline">
+    Файлы конференции
+  </h3>
+  <ul class="nav-list">
+    <li class="nav-item">
+      <a class="pure-button" href="{% url 'exchange:confs' %}">Мои конференции</a>
+    </li>
+    <li class="nav-item">
+      <a class="pure-button" href="{% url 'accounts:user_logout' %}">Выйти</a>
+    </li>
+    </ul>  
+    <div id="busyStatus">
+    </div>
+</div>
+{% endblock %}
+{% block content %}
+<script src="{% static 'lib/jquery-3.6.0.min.js' %}"></script>
+<script>
+
+function runAction(fData){
+    fData.append('csrfmiddlewaretoken', '{{ csrf_token }}');    
+    $('<form></form>').appendTo('body').submit(function(e){        
+        $.ajax({
+        beforeSend : function(){
+        // $('#busy-indicator').css('background-color','red');
+        },
+        complete: function(){
+        },
+        type: 'POST',
+        url: "{% url 'exchange:new_ctl' uuid=assignment.id %}",
+        success: function(data){
+            if (data.members){
+//             buildParticipants(data);
+//             setConfInfo(data);
+            } else {
+            if (data.success){
+            /* $('#hidden-action').val('conf-info');
+                $(this).submit();*/
+            } else {
+                alert(data.comment);
+            }
+            }
+            //$('#busy-indicator').css('background-color','green');
+
+        },
+        data: fData,
+        contentType: false,
+        cache: false,
+        processData: false,
+        error: function(){
+            alert(response.responseJSON.error);
+            console.log(response.responseJSON.error);
+        },
+        });
+        e.preventDefault();
+    }).submit().remove();    
+}
+
+function playFile(fileId, fullScreen){
+    var fd = new FormData();
+    fd.append('fileId',fileId);
+    fd.append('action', 'play');
+    runAction(fd)
+}
+
+function stopAll(){
+    var fd = new FormData();
+    fd.append('action', 'stop');
+    runAction(fd);
+}
+
+function tpause(){
+    var fd = new FormData();
+    fd.append('action', 'tpause');
+    runAction(fd);
+}
+</script>
+<div>
+    {% if object_list %}
+    <table class='pure-table pure-table-horizontal pure-table-striped' style="width: 100%;">
+    {% for asset in object_list %}
+      <tr>
+        <td class=''>
+            {{ asset.get_base_name }}
+        </td>
+        <td class=''>
+            <a class='pure-button' href="{% url 'exchange:delete_asset' pk=asset.pk%}">
+            Del
+            </a>
+            {% if assignment.flags.name == 'admin' %}
+            <a class='pure-button' href="javascript:playFile({{ asset.id }}, false)">
+            Play
+            </a>
+            {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+      <tr>
+        <td>
+        </td>
+        <td>
+          <input type='button' class='pure-button pure-button-primary' onclick="stopAll()" value="Stop all">
+          <input type='button' class='pure-button pure-button-primary' onclick="tpause()" value="Pause">
+        </td>
+      </tr>
+        </table>
+    {% else %}
+    <h2>
+    Загруженных файлов нет.
+    </h2>
+    {% endif %}
+</div>
+<a href="{% url 'exchange:upload_conf_asset' %}">
+Добавить
+</a>
+
+<script>
+$(document).ready(function (){
+  
+
+});
+</script>
+{% endblock %}
